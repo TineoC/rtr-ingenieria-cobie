@@ -3,9 +3,6 @@ import * as THREE from 'three'
 import { mainToolbarName } from '../types'
 import { cullerUpdater } from '../src/culler-updater'
 import toast from 'react-hot-toast'
-import readXlsxFile from 'read-excel-file'
-import { useSetAtom } from 'jotai'
-import { processCobieSpreadsheet } from '../../utils/cobie'
 
 let _uploadedSpreadsheet: File | null = null
 
@@ -242,9 +239,9 @@ export class Initializer {
       if (model) {
         propsProcessor.renderProperties(model, expressID)
 
-        const { properties } = OBC.IfcPropertiesManager.getIFCInfo(model)
-        const { name: cobieComponentName } =
-          OBC.IfcPropertiesUtils.getEntityName(properties, expressID)
+        // const { properties } = OBC.IfcPropertiesManager.getIFCInfo(model)
+        // const { name: cobieComponentName } =
+        //   OBC.IfcPropertiesUtils.getEntityName(properties, expressID)
       }
     })
 
