@@ -3,6 +3,8 @@ import * as THREE from 'three'
 import { mainToolbarName } from '../types'
 import { cullerUpdater } from '../src/culler-updater'
 import toast from 'react-hot-toast'
+import { v4 as uuidv4 } from 'uuid'
+import { supabase } from '../../supabase'
 
 let _uploadedSpreadsheet: File | null = null
 
@@ -135,13 +137,44 @@ export class Initializer {
 
       // @ts-ignore
       _uploadedSpreadsheet = file
+
+      const fetchData = async () => {
+        const referenceId = uuidv4()
+
+        const { data, error } = await supabase.storage
+          .from('spreadsheets')
+          .upload(`/cobie/${referenceId}.xlsx`, file)
+
+        console.log({ data, error })
+
+        if (error) {
+          throw new Error('existing file')
+        }
+
+        const response = await fetch(
+          `http://localhost:3001/process/${referenceId}`
+        )
+
+        const json = await response.json()
+
+        localStorage.setItem('referenceId', referenceId)
+
+        console.log({ json })
+      }
+
+      const callFunction = fetchData()
+
+      toast.promise(callFunction, {
+        loading: 'Loading...',
+        success: `Succesfully uploaded file: ${fileName}`,
+        error: 'Something bad happened',
+      })
     }
 
     // Create input element for file upload
     const manufacturerFileInput = document.createElement('input')
     manufacturerFileInput.type = 'file'
     manufacturerFileInput.accept = '.xlsx'
-    manufacturerFileInput.style.display = 'none' // Hide the input element
 
     // Attach event listener to the file input
     manufacturerFileInput.addEventListener('change', handleFileUpload)
@@ -160,9 +193,41 @@ export class Initializer {
     alertButton.onClick.add(handleManufacturerDetails)
 
     function handleManufacturerDetails() {
-      if (!_uploadedSpreadsheet) {
+      const componentDescription = localStorage.getItem('cobieComponentName')
+      const referenceId = localStorage.getItem('referenceId')
+
+      if (!componentDescription) {
+        return toast.error('Please select a component')
+      }
+
+      if (!referenceId) {
         return toast.error('Please upload the manufacturer spreadsheet first')
       }
+
+      const fetchData = async () => {
+        const response = await fetch('http://localhost:3001/component', {
+          method: 'POST',
+          body: JSON.stringify({
+            description: componentDescription,
+          }),
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+        })
+
+        const json = await response.json()
+
+        console.log(json)
+      }
+
+      const callFunction = fetchData()
+
+      toast.promise(callFunction, {
+        loading: 'Loading...',
+        success: `Succesfully fetch component: ${componentDescription}`,
+        error: 'Something bad happened',
+      })
 
       // TODO: validate if manufacturer details is associated with that model
       // TODO:
@@ -221,8 +286,6 @@ export class Initializer {
     })
 
     highlighter.events.select.onHighlight.add((selection) => {
-      console.log({ selection, fragments })
-
       const fragmentID = Object.keys(selection)[0]
       const firstID = Array.from(selection[fragmentID])[0]
       const expressID = Number(firstID)
@@ -239,9 +302,11 @@ export class Initializer {
       if (model) {
         propsProcessor.renderProperties(model, expressID)
 
-        // const { properties } = OBC.IfcPropertiesManager.getIFCInfo(model)
-        // const { name: cobieComponentName } =
-        //   OBC.IfcPropertiesUtils.getEntityName(properties, expressID)
+        const { properties } = OBC.IfcPropertiesManager.getIFCInfo(model)
+        const { name: cobieComponentName } =
+          OBC.IfcPropertiesUtils.getEntityName(properties, expressID)
+
+        localStorage.setItem('cobieComponentName', cobieComponentName!)
       }
     })
 
