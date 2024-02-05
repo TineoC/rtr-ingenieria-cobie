@@ -80,6 +80,19 @@ export class Initializer {
     const exploder = new OBC.FragmentExploder(components)
     mainToolbar.addChild(exploder.uiElement.get('main'))
 
+    const cobiePropsWindows = new OBC.FloatingWindow(components)
+    const propsList = new OBC.SimpleUIComponent(
+      components,
+      `<div class="flex flex-col">
+      </div>`
+    )
+
+    cobiePropsWindows.title = 'Cobie Component Details'
+    cobiePropsWindows.visible = false
+
+    components.ui.add(cobiePropsWindows)
+    cobiePropsWindows.addChild(propsList)
+
     const clipper = await this._components.tools.get(OBC.EdgesClipper)
     clipper.enabled = true
     // window.onkeydown = (event) => {
@@ -119,7 +132,7 @@ export class Initializer {
 
     const manufacturerSpreadSheet = new OBC.Button(components)
     manufacturerSpreadSheet.materialIcon = 'upload_file'
-    manufacturerSpreadSheet.tooltip = 'Upload Manufacturer Spreadsheet'
+    manufacturerSpreadSheet.tooltip = 'Upload CoBie Spreadsheet'
     mainToolbar.addChild(manufacturerSpreadSheet)
 
     // Function to handle file upload
@@ -184,6 +197,14 @@ export class Initializer {
       manufacturerFileInput.click()
     })
 
+    cobiePropsWindows.onHidden.add(() => {
+      console.log('Hidden')
+      propsList.children = []
+      cobiePropsWindows.children = []
+      propsList.dispose(true)
+      console.log({ propsList, cobiePropsWindows })
+    })
+
     const alertButton = new OBC.Button(components)
     alertButton.materialIcon = 'info'
     alertButton.tooltip = 'Search COBie Manufacturer Details'
@@ -216,9 +237,59 @@ export class Initializer {
           },
         })
 
-        const json = await response.json()
+        const {
+          component: [firstMatch],
+        } = await response.json()
 
-        console.log(json)
+        cobiePropsWindows.visible = true
+
+        console.log({ firstMatch })
+        console.log(Object.keys(firstMatch.Type))
+
+        for (const key in firstMatch) {
+          if (key === 'Type') {
+            return propsList.addChild(
+              new OBC.SimpleUIComponent(
+                components,
+                `<span>Type id ${firstMatch.TypeName}
+              <ul class="flex flex-col ml-3">
+                ${Object.keys(firstMatch.Type)
+                  .map((key) => {
+                    return `<li>${key}: ${firstMatch.Type[key]}</li>`
+                  })
+                  .join('')}
+              </ul>
+            </span>`
+              )
+            )
+          }
+
+          propsList.addChild(
+            new OBC.SimpleUIComponent(
+              components,
+              `<span>${key}: ${firstMatch[key]}</span>`
+            )
+          )
+        }
+
+        // firstMatch.Spaces.map((space) => {
+        //   propsList.addChild(
+        //     new OBC.SimpleUIComponent(
+        //       components,
+        //       `<span>Space id ${space.Name}
+        //         <ul class="flex flex-col ml-3">
+        //         ${Object.keys(space)
+        //           .map((spaceKey) => {
+        //             return `<li>${spaceKey}: ${space[spaceKey]}</li>`
+        //           })
+        //           .join('')}
+        //           </ul>
+        //           </span>`
+        //     )
+        //   )
+        // })
+
+        console.log(firstMatch)
       }
 
       const callFunction = fetchData()
