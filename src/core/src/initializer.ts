@@ -164,15 +164,20 @@ export class Initializer {
           throw new Error('existing file')
         }
 
-        const response = await fetch(
-          `http://localhost:3001/process/${referenceId}`
-        )
+        try {
+          const response = await fetch(
+            `http://localhost:3001/process/${referenceId}`
+          )
 
-        const json = await response.json()
+          const json = await response.json()
 
-        localStorage.setItem('referenceId', referenceId)
+          localStorage.setItem('referenceId', referenceId)
 
-        console.log({ json })
+          console.log({ json })
+        } catch (error) {
+          await supabase.storage.from('spreadsheets').remove([data.path])
+          console.error(error)
+        }
       }
 
       const callFunction = fetchData()
@@ -288,8 +293,6 @@ export class Initializer {
         //     )
         //   )
         // })
-
-        console.log(firstMatch)
       }
 
       const callFunction = fetchData()
@@ -297,7 +300,7 @@ export class Initializer {
       toast.promise(callFunction, {
         loading: 'Loading...',
         success: `Succesfully fetch component: ${componentDescription}`,
-        error: 'Something bad happened',
+        error: 'Component is not part of CoBie',
       })
 
       // TODO: validate if manufacturer details is associated with that model
@@ -374,8 +377,10 @@ export class Initializer {
         propsProcessor.renderProperties(model, expressID)
 
         const { properties } = OBC.IfcPropertiesManager.getIFCInfo(model)
-        const { name: cobieComponentName } =
+        const { name: cobieComponentName, ...rest } =
           OBC.IfcPropertiesUtils.getEntityName(properties, expressID)
+
+        console.log({ cobieComponentName, ...rest, properties })
 
         localStorage.setItem('cobieComponentName', cobieComponentName!)
       }
