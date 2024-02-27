@@ -380,6 +380,7 @@ export class Initializer {
         const { name: cobieComponentName, ...rest } =
           OBC.IfcPropertiesUtils.getEntityName(properties, expressID)
 
+        // TODO: FIND GUID BY THIS DATA
         console.log({ cobieComponentName, ...rest, properties })
 
         localStorage.setItem('cobieComponentName', cobieComponentName!)
