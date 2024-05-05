@@ -3,10 +3,6 @@ import * as THREE from 'three'
 import { mainToolbarName } from '../types'
 import { cullerUpdater } from '../src/culler-updater'
 import toast from 'react-hot-toast'
-import { v4 as uuidv4 } from 'uuid'
-import { supabase } from '../../supabase'
-
-let _uploadedSpreadsheet: File | null = null
 
 export class Initializer {
   private _components: OBC.Components
@@ -135,67 +131,10 @@ export class Initializer {
     manufacturerSpreadSheet.tooltip = 'Upload CoBie Spreadsheet'
     mainToolbar.addChild(manufacturerSpreadSheet)
 
-    // Function to handle file upload
-    async function handleFileUpload(event: any) {
-      const file = event.target.files[0]
-
-      if (!file) return
-
-      const fileName = file.name
-      // Check if the file has the .xlsx extension
-      if (!fileName.endsWith('.xlsx')) {
-        // You can perform further processing with the file here
-        return toast.error('Please upload a valid .xlsx file.')
-      }
-
-      // @ts-ignore
-      _uploadedSpreadsheet = file
-
-      const fetchData = async () => {
-        const referenceId = uuidv4()
-
-        const { data, error } = await supabase.storage
-          .from('spreadsheets')
-          .upload(`/cobie/${referenceId}.xlsx`, file)
-
-        console.log({ data, error })
-
-        if (error) {
-          throw new Error('existing file')
-        }
-
-        try {
-          const response = await fetch(
-            `http://localhost:3001/process/${referenceId}`
-          )
-
-          const json = await response.json()
-
-          localStorage.setItem('referenceId', referenceId)
-
-          console.log({ json })
-        } catch (error) {
-          await supabase.storage.from('spreadsheets').remove([data.path])
-          console.error(error)
-        }
-      }
-
-      const callFunction = fetchData()
-
-      toast.promise(callFunction, {
-        loading: 'Loading...',
-        success: `Succesfully uploaded file: ${fileName}`,
-        error: 'Something bad happened',
-      })
-    }
-
     // Create input element for file upload
     const manufacturerFileInput = document.createElement('input')
     manufacturerFileInput.type = 'file'
     manufacturerFileInput.accept = '.xlsx'
-
-    // Attach event listener to the file input
-    manufacturerFileInput.addEventListener('change', handleFileUpload)
 
     // Trigger file input click when the button is clicked
     manufacturerSpreadSheet.onClick.add(() => {
@@ -359,6 +298,26 @@ export class Initializer {
       this._manufacturerReferencesList = []
     })
 
+    function findCobieComponentName(obj: any): any {
+      if (obj && typeof obj === 'object') {
+        for (const key in obj) {
+          if (obj.hasOwnProperty(key)) {
+            if (obj[key] && typeof obj[key] === 'object') {
+              const result = findCobieComponentName(obj[key])
+              if (result) {
+                return result
+              }
+            }
+          }
+        }
+        if (obj.Name && obj.Name.value === 'COBie.Component.Name') {
+          console.log({ obj })
+          return obj
+        }
+      }
+      return null
+    }
+
     highlighter.events.select.onHighlight.add((selection) => {
       const fragmentID = Object.keys(selection)[0]
       const firstID = Array.from(selection[fragmentID])[0]
@@ -373,17 +332,22 @@ export class Initializer {
           this._manufacturerReferencesList.push(group.uuid)
         }
       }
+
       if (model) {
         propsProcessor.renderProperties(model, expressID)
+        const props = propsProcessor.getProperties(model, String(expressID))
 
-        const { properties } = OBC.IfcPropertiesManager.getIFCInfo(model)
-        const { name: cobieComponentName, ...rest } =
-          OBC.IfcPropertiesUtils.getEntityName(properties, expressID)
+        const { NominalValue } = findCobieComponentName(props)
 
-        // TODO: FIND GUID BY THIS DATA
-        console.log({ cobieComponentName, ...rest, properties })
+        const sensorReferenceValue = NominalValue.value
 
-        localStorage.setItem('cobieComponentName', cobieComponentName!)
+        if (!sensorReferenceValue || sensorReferenceValue === '') {
+          toast.error('Sensor reference was not found for this component.')
+          return
+        }
+
+        toast.success(`Sensor reference found: ${sensorReferenceValue}.`)
+        localStorage.setItem('sensorReferenceName', sensorReferenceValue)
       }
     })
 

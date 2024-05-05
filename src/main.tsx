@@ -13,12 +13,5 @@ ReactDOM.createRoot(document.getElementById('app')!).render(
     </Router>
 
     <Toaster />
-    {/* <Draggable>
-      <div className='z-50 bg-[#000000bb] text-white rounded-lg w-fit p-3'>
-        <h3 className='text-lg text-[#bcf124] font-medium'>
-          I can be dragged anywhere
-        </h3>
-      </div>
-    </Draggable> */}
   </>
 )
