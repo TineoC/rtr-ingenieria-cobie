@@ -4,6 +4,8 @@ import { Routes, Route, HashRouter as Router } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import './index.css'
 
+sessionStorage.removeItem('sensorReferenceName')
+
 ReactDOM.createRoot(document.getElementById('app')!).render(
   <>
     <Router>

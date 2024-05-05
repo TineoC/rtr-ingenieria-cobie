@@ -347,7 +347,7 @@ export class Initializer {
         }
 
         toast.success(`Sensor reference found: ${sensorReferenceValue}.`)
-        localStorage.setItem('sensorReferenceName', sensorReferenceValue)
+        sessionStorage.setItem('sensorReferenceName', sensorReferenceValue)
       }
     })
 

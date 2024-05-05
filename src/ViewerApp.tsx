@@ -26,15 +26,15 @@ export const ViewerApp: FC = () => {
   const containerRef = useRef(null)
   const [isOpen, setIsOpen] = useState(false)
   const [sensorData, setSensorData] = useState(null)
-  const sensorName = localStorage.getItem('sensorReferenceName')
-
-  console.log({ sensorName })
 
   useEffect(() => {
     ws.onmessage = (event) => {
       const { channel, data } = JSON.parse(event.data)
 
-      if (channel !== `sensors/${sensorName}`) return
+      if (
+        channel !== `sensors/${sessionStorage.getItem('sensorReferenceName')}`
+      )
+        return
 
       console.log({ channel, data })
       setSensorData(data)
@@ -47,8 +47,6 @@ export const ViewerApp: FC = () => {
   }
 
   function openModal() {
-    if (sensorName === '' || !sensorName) return
-
     setIsOpen(true)
   }
 
@@ -61,90 +59,90 @@ export const ViewerApp: FC = () => {
   }, [])
 
   return (
-      <Box
-        style={appStyles}
-        component='div'
-        sx={{
-          position: 'absolute !important',
-          top: 0,
-          left: 0,
-          bottom: 0,
-          right: 0,
-        }}
-        ref={containerRef}
-      >
-        {sensorName && (
-          <button
-            type='button'
-            onClick={openModal}
-            className='px-4 py-2 text-sm font-medium text-white rounded-md bg-black/20 hover:bg-black/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75'
+    <Box
+      style={appStyles}
+      component='div'
+      sx={{
+        position: 'absolute !important',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        right: 0,
+      }}
+      ref={containerRef}
+    >
+      {sessionStorage.getItem('sensorReferenceName') && (
+        <button
+          type='button'
+          onClick={openModal}
+          className='absolute bottom-0 right-0 px-4 py-2 text-sm font-medium text-white rounded-md bg-black/20 hover:bg-black/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75'
+        >
+          Get Sensor Data
+        </button>
+      )}
+
+      <Transition appear show={isOpen} as={Fragment}>
+        <Dialog as='div' className='relative z-10' onClose={closeModal}>
+          <Transition.Child
+            as={Fragment}
+            enter='ease-out duration-300'
+            enterFrom='opacity-0'
+            enterTo='opacity-100'
+            leave='ease-in duration-200'
+            leaveFrom='opacity-100'
+            leaveTo='opacity-0'
           >
-            Get Sensor Data
-          </button>
-        )}
+            <div className='fixed inset-0 bg-black/25' />
+          </Transition.Child>
 
-        <Transition appear show={isOpen} as={Fragment}>
-          <Dialog as='div' className='relative z-10' onClose={closeModal}>
-            <Transition.Child
-              as={Fragment}
-              enter='ease-out duration-300'
-              enterFrom='opacity-0'
-              enterTo='opacity-100'
-              leave='ease-in duration-200'
-              leaveFrom='opacity-100'
-              leaveTo='opacity-0'
-            >
-              <div className='fixed inset-0 bg-black/25' />
-            </Transition.Child>
+          <div className='fixed inset-0 overflow-y-auto'>
+            <div className='flex items-center justify-center min-h-full p-4 text-center'>
+              <Transition.Child
+                as={Fragment}
+                enter='ease-out duration-300'
+                enterFrom='opacity-0 scale-95'
+                enterTo='opacity-100 scale-100'
+                leave='ease-in duration-200'
+                leaveFrom='opacity-100 scale-100'
+                leaveTo='opacity-0 scale-95'
+              >
+                <Dialog.Panel className='w-full max-w-md p-6 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl'>
+                  <Dialog.Title
+                    as='h3'
+                    className='text-lg font-medium leading-6 text-gray-900'
+                  >
+                    Sensor Data
+                  </Dialog.Title>
 
-            <div className='fixed inset-0 overflow-y-auto'>
-              <div className='flex items-center justify-center min-h-full p-4 text-center'>
-                <Transition.Child
-                  as={Fragment}
-                  enter='ease-out duration-300'
-                  enterFrom='opacity-0 scale-95'
-                  enterTo='opacity-100 scale-100'
-                  leave='ease-in duration-200'
-                  leaveFrom='opacity-100 scale-100'
-                  leaveTo='opacity-0 scale-95'
-                >
-                  <Dialog.Panel className='w-full max-w-md p-6 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl'>
-                    <Dialog.Title
-                      as='h3'
-                      className='text-lg font-medium leading-6 text-gray-900'
+                  <div className='mt-2'>
+                    {sensorData &&
+                      Object.entries(sensorData).map(([key, value]) => (
+                        <p key={key} className='flex items-center gap-x-2'>
+                          <span className='font-bold text-gray-700 text-md'>
+                            {key}
+                          </span>
+                          <span className='text-sm text-gray-500'>
+                            {value ?? 'N/A'}
+                          </span>
+                        </p>
+                      ))}
+                  </div>
+
+                  <div className='mt-4'>
+                    <button
+                      type='button'
+                      className='inline-flex justify-center px-4 py-2 text-sm font-medium text-blue-900 bg-blue-100 border border-transparent rounded-md hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2'
+                      onClick={closeModal}
                     >
-                      Sensor Data
-                    </Dialog.Title>
-
-                    <div className='mt-2'>
-                      {sensorData &&
-                        Object.entries(sensorData).map(([key, value]) => (
-                          <p key={key} className='flex items-center gap-x-2'>
-                            <span className='font-bold text-gray-700 text-md'>
-                              {key}
-                            </span>
-                            <span className='text-sm text-gray-500'>
-                              {value ?? 'N/A'}
-                            </span>
-                          </p>
-                        ))}
-                    </div>
-
-                    <div className='mt-4'>
-                      <button
-                        type='button'
-                        className='inline-flex justify-center px-4 py-2 text-sm font-medium text-blue-900 bg-blue-100 border border-transparent rounded-md hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2'
-                        onClick={closeModal}
-                      >
-                        Close
-                      </button>
-                    </div>
-                  </Dialog.Panel>
-                </Transition.Child>
-              </div>
+                      Close
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
             </div>
-          </Dialog>
-        </Transition>
-      </Box>
+          </div>
+        </Dialog>
+      </Transition>
+    </Box>
   )
 }
