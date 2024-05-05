@@ -6,11 +6,6 @@ import { Dialog, Transition } from '@headlessui/react'
 //@ts-ignore
 import appStyles from './viewer-styles.module.css'
 
-//@ts-ignore
-const WEBSOCKET_ADDRESS = import.meta.env.WEBSOCKET_ADDRESS || 'localhost'
-//@ts-ignore
-const WEBSOCKET_PORT = import.meta.env.WEBSOCKET_PORT || 6969
-
 const ws = new WebSocket('ws://localhost:6969')
 
 ws.onopen = () => {
@@ -36,7 +31,6 @@ export const ViewerApp: FC = () => {
       )
         return
 
-      console.log({ channel, data })
       setSensorData(data)
     }
   }, [])
@@ -116,16 +110,20 @@ export const ViewerApp: FC = () => {
 
                   <div className='mt-2'>
                     {sensorData &&
-                      Object.entries(sensorData).map(([key, value]) => (
-                        <p key={key} className='flex items-center gap-x-2'>
-                          <span className='font-bold text-gray-700 text-md'>
-                            {key}
-                          </span>
-                          <span className='text-sm text-gray-500'>
-                            {value ?? 'N/A'}
-                          </span>
-                        </p>
-                      ))}
+                      Object.entries(sensorData).map(
+                        // @ts-ignore
+                        ([key, value]: [string, string]) => (
+                          <p key={key} className='flex items-center gap-x-2'>
+                            <span className='font-bold text-gray-700 text-md'>
+                              {key}
+                            </span>
+                            <span className='text-sm text-gray-500'>
+                              {/* @ts-ignore */}
+                              {value || 'N/A'}
+                            </span>
+                          </p>
+                        )
+                      )}
                   </div>
 
                   <div className='mt-4'>
